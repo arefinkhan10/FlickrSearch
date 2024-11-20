@@ -1,0 +1,44 @@
+package com.flickrsearch
+
+import android.annotation.SuppressLint
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.flickrsearch.network.FlickrApiService
+import com.flickrsearch.repo.FlickrRepositoryImpl
+import com.flickrsearch.repo.SearchUseCase
+import com.flickrsearch.theme.FlickrSearchTheme
+import com.flickrsearch.ui.FlickrSearchScreen
+import com.flickrsearch.ui.FlickrViewModel
+import com.flickrsearch.ui.ImageDetailScreen
+
+/**
+ * Entry point for the app.
+ */
+class FlickrSearchActivity : ComponentActivity() {
+    @SuppressLint("StateFlowValueCalledInComposition")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val viewModel = FlickrViewModel(SearchUseCase(FlickrRepositoryImpl(FlickrApiService.create())))
+
+        setContent() {
+            FlickrSearchTheme(darkTheme = false){
+                val navController = rememberNavController()
+                NavHost(navController = navController, startDestination = "search") {
+                    composable("search") {
+                        FlickrSearchScreen(viewModel = viewModel, navController = navController)
+                    }
+                    composable("detail/{index}") { backStackEntry ->
+                        val index = backStackEntry.arguments?.getString("index")?.toIntOrNull()
+                        val photo = viewModel.photos.value[index ?: 0]
+                        ImageDetailScreen(photo = photo, navController = navController)
+                    }
+                }
+            }
+        }
+    }
+}
